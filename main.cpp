@@ -53,7 +53,7 @@ int main(int argc, const char* argv[])
   TraceReader trace_reader(trace_file);
   
   res = trace_reader.readTrace(vmngr);
-  gzclose(cnf_file);
+  gzclose(trace_file);
   if (res != 0)
   {
     printf("Something went wrong while reading CNF, code %d", res);
