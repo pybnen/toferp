@@ -21,24 +21,32 @@ private:
     std::vector<bool> occurring_prop;
     std::vector<uint32_t> clause_origin;
 
+
 public:
     inline VarManager();
     ~VarManager();
 
+    bool is_sat;
+    std::vector<std::vector<Lit>> clauses;
     int addVariables(const std::vector<Var> &prop, const std::vector<Var> &orig, const std::vector<Lit> &anno);
     void computeNames();
+    void writeIsSat(FILE *file);
     void writeExpansions(FILE *file);
+    void writeCNF(FILE *file);
     inline void pushClauseOrigin(uint32_t cl);
     inline void addOccurence(Var v);
     inline uint32_t numClauseOrigins() const;
     inline uint32_t getClauseOrigin(uint32_t clause_id) const;
     inline Lit getLitFerp(const Lit l) const;
+    bool isHelpVariable(Var v);
+    bool isLiteralClause(std::vector<Lit> clause);
 };
 
 //////////// INLINE IMPLEMENTATIONS ////////////
 
 VarManager::VarManager()
 {
+    is_sat = false;
     clause_origin.push_back(0);
 }
 

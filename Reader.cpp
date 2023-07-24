@@ -120,9 +120,38 @@ int AnnotationReader::readCNF(VarManager &mngr)
                 mngr.pushClauseOrigin(cl);
             }
         }
+        else if (*stream == 's')
+        {
+            ++stream;
+            skipWhitespace(stream);
+            unsigned is_sat;
+            parseUnsigned(is_sat);
+            mngr.is_sat = (is_sat == 1);
+        }
         else
+        {
             skipLine(stream);
+        }
     }
+
+    //TODO assert next line is p cnf x y
+    if (*stream == 'p')
+    {
+        skipLine(stream);
+        while (*stream != EOF) {
+            Lit literal;
+            std::vector<Lit> clause = std::vector<Lit>();
+            parseSigned(literal);
+            while (literal != 0)
+            {
+                clause.push_back(literal);
+                mngr.addOccurence(var(literal));
+                parseSigned(literal);
+            }
+            mngr.clauses.push_back(clause);
+        }
+    }
+
     return 0;
 }
 
@@ -150,23 +179,48 @@ int TraceReader::readTrace(VarManager &mngr)
 
 void TraceReader::writeTrace(VarManager &mngr, FILE *file)
 {
+    /* expansion */
+    // for (uint32_t i = 1; i < trace_clauses.size(); i++)
+    // {
+    //     const std::array<uint32_t, 2> &ante = antecedents[i];
+
+    //     if (ante[0] == 0)
+    //     {
+    //         fprintf(file, "%d ", i);
+
+    //         const std::vector<Lit> &clause = trace_clauses[i];
+    //         for (const Lit l : clause)
+    //         {
+    //             fprintf(file, "%d ", mngr.getLitFerp(l));
+    //         }
+    //         fprintf(file, "0 ");
+
+    //         fprintf(file, "%d 0", mngr.getClauseOrigin(trace_id_to_cnf_id[i]));
+    //         fprintf(file, " is lit clause %d 0\n", isLiteralClause(clause, mngr));
+    //     }
+    // }
+    /* resolution proof */
+
+    fprintf(file, "%s", "r\n");
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
     {
-        fprintf(file, "%d ", i);
-        const std::vector<Lit> &clause = trace_clauses[i];
-        for (const Lit l : clause)
-            fprintf(file, "%d ", mngr.getLitFerp(l));
-        fprintf(file, "0 ");
         const std::array<uint32_t, 2> &ante = antecedents[i];
-        if (ante[0] == 0)
-        {
-            fprintf(file, "%d 0\n", mngr.getClauseOrigin(trace_id_to_cnf_id[i]));
-        }
-        else
+
+        if (ante[0] != 0)
         {
             assert(ante[0] != 0 && ante[1] != 0);
-            fprintf(file, "%d ", cnf_id_to_trace_id[ante[0]]);
-            fprintf(file, "%d 0\n", cnf_id_to_trace_id[ante[1]]);
+        
+            fprintf(file, "%d ", trace_id_to_cnf_id[i]);
+
+            const std::vector<Lit> &clause = trace_clauses[i];
+            for (const Lit l : clause)
+            {
+                fprintf(file, "%d ", mngr.getLitFerp(l));
+            }
+            fprintf(file, "0 ");
+            
+            fprintf(file, "%d ", ante[0]);
+            fprintf(file, "%d 0\n", ante[1]);        
         }
     }
 }
@@ -178,9 +232,15 @@ int TraceReader::readClause()
     std::vector<Lit> &clause = trace_clauses.back();
     uint32_t index = 0;
     if (parseUnsigned(index))
+    {
         return 1;
+    }
+
     if (!cnf_id_to_trace_id.insert(std::pair<uint32_t, uint32_t>(index, trace_clauses.size() - 1)).second)
+    {
         return 2;
+    }
+
     trace_id_to_cnf_id.push_back(index);
 
     while (true)

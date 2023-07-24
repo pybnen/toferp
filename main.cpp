@@ -61,8 +61,9 @@ int main(int argc, const char *argv[])
     }
 
     vmngr.computeNames();
+    vmngr.writeIsSat(ferp_file);
     vmngr.writeExpansions(ferp_file);
-
+    vmngr.writeCNF(ferp_file);
     trace_reader.writeTrace(vmngr, ferp_file);
     fclose(ferp_file);
 

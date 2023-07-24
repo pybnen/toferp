@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-
+#include <algorithm>
 #include "VarManager.h"
 
 VarManager::~VarManager()
@@ -39,6 +39,11 @@ void VarManager::computeNames()
 			prop_to_ferp[pv] = fv++;
 }
 
+void VarManager::writeIsSat(FILE *file)
+{
+	fprintf(file, "s %d\n", is_sat);
+}
+
 void VarManager::writeExpansions(FILE *file)
 {
 	std::map<std::vector<Lit> *, uint32_t> annotation_to_id;
@@ -48,9 +53,11 @@ void VarManager::writeExpansions(FILE *file)
 	std::vector<std::vector<Var>> props;
 	props.resize(annotations.size());
 
-	for (uint32_t v = 0; v < occurring_prop.size(); v++)
-		if (occurring_prop[v])
+	for (uint32_t v = 0; v < occurring_prop.size(); v++) {
+		if (occurring_prop[v] && prop_to_annotation.find(v) != prop_to_annotation.end()) {
 			props[annotation_to_id[prop_to_annotation[v]]].push_back(v);
+		}
+	}
 
 	std::vector<std::vector<Var>> origs;
 	origs.resize(annotations.size());
@@ -85,4 +92,48 @@ void VarManager::writeExpansions(FILE *file)
 			fprintf(file, "%d ", l);
 		fprintf(file, "0\n");
 	}
+}
+
+void VarManager::writeCNF(FILE *file)
+{
+	std::reverse(clause_origin.begin(), clause_origin.end());
+	clause_origin.pop_back();
+	for (uint32_t i = 0; i < clauses.size(); i++)
+	{
+		fprintf(file, "%d ", i + 1);
+		for (const auto literal : clauses[i])
+		{
+			fprintf(file, "%d ", getLitFerp(literal));
+		}
+
+		fprintf(file, "0 ");
+
+		if (!isLiteralClause(clauses[i]))
+		{
+			for (uint32_t j = 0; j < clauses[i].size(); j++)
+			{
+				fprintf(file, "%d ", clause_origin.back());
+				clause_origin.pop_back();
+			}
+		}
+		fprintf(file, "0\n");
+	}
+}
+
+bool VarManager::isLiteralClause(std::vector<Lit> clause)
+{
+    for (const auto literal : clause)
+    {
+        if (isHelpVariable(var(literal)) && sign(literal) == false)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool VarManager::isHelpVariable(Var v)
+{
+	return prop_to_annotation.find(v) == prop_to_annotation.end();
 }
