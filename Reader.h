@@ -44,7 +44,6 @@ public:
 class TraceReader : protected Reader
 {
 private:
-	std::vector<std::vector<Lit>> trace_clauses;	  ///< Clauses as they appear in the trace
 	std::vector<uint32_t> trace_id_to_cnf_id;		  ///< Clause ids as they appear in the trace
 	std::map<uint32_t, uint32_t> cnf_id_to_trace_id;  ///< Lookup table in other direction
 	std::vector<std::array<uint32_t, 2>> antecedents; ///< Stores anteceedents of each trace clause
@@ -52,6 +51,8 @@ private:
 	int readClause();
 
 public:
+	std::vector<std::vector<Lit>> trace_clauses;	  ///< Clauses as they appear in the trace
+
 	/// Reads the important parts of the CNF and stores it in \a mngr
 	int readTrace(VarManager &mngr);
 	void writeTrace(VarManager &mngr, FILE *file);

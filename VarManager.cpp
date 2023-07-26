@@ -44,6 +44,11 @@ void VarManager::writeIsSat(FILE *file)
 	fprintf(file, "s %d\n", is_sat);
 }
 
+void VarManager::writeEmptyClause(FILE *file)
+{
+	fprintf(file, "%s\n", "1 0 0");
+}
+
 void VarManager::writeExpansions(FILE *file)
 {
 	std::map<std::vector<Lit> *, uint32_t> annotation_to_id;

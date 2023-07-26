@@ -1,4 +1,5 @@
 #include <zlib.h>
+#include <assert.h>
 
 #include "Reader.h"
 
@@ -62,9 +63,15 @@ int main(int argc, const char *argv[])
 
     vmngr.computeNames();
     vmngr.writeIsSat(ferp_file);
-    vmngr.writeExpansions(ferp_file);
-    vmngr.writeCNF(ferp_file);
-    trace_reader.writeTrace(vmngr, ferp_file);
+    if (vmngr.has_empty_clause) {
+        vmngr.writeEmptyClause(ferp_file);
+        assert(trace_reader.trace_clauses.size() == 1);
+        trace_reader.writeTrace(vmngr, ferp_file);
+    } else {
+        vmngr.writeExpansions(ferp_file);
+        vmngr.writeCNF(ferp_file);
+        trace_reader.writeTrace(vmngr, ferp_file);
+    }
     fclose(ferp_file);
 
     return 0;

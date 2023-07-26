@@ -148,6 +148,9 @@ int AnnotationReader::readCNF(VarManager &mngr)
                 mngr.addOccurence(var(literal));
                 parseSigned(literal);
             }
+            if (clause.size() == 0) {
+                mngr.has_empty_clause = true;
+            }
             mngr.clauses.push_back(clause);
         }
     }

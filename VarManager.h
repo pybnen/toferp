@@ -27,12 +27,14 @@ public:
     ~VarManager();
 
     bool is_sat;
+    bool has_empty_clause;
     std::vector<std::vector<Lit>> clauses;
     int addVariables(const std::vector<Var> &prop, const std::vector<Var> &orig, const std::vector<Lit> &anno);
     void computeNames();
     void writeIsSat(FILE *file);
     void writeExpansions(FILE *file);
     void writeCNF(FILE *file);
+    void writeEmptyClause(FILE *file);
     inline void pushClauseOrigin(uint32_t cl);
     inline void addOccurence(Var v);
     inline uint32_t numClauseOrigins() const;
@@ -47,6 +49,7 @@ public:
 VarManager::VarManager()
 {
     is_sat = false;
+    has_empty_clause = false;
     clause_origin.push_back(0);
 }
 
