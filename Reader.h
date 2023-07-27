@@ -56,6 +56,7 @@ public:
 	/// Reads the important parts of the CNF and stores it in \a mngr
 	int readTrace(VarManager &mngr);
 	void writeTrace(VarManager &mngr, FILE *file);
+	void writeTraceSAT(VarManager &mngr, FILE *file);
 
 	TraceReader(gzFile &file) : Reader(file){};
 };

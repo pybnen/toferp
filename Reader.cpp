@@ -134,7 +134,6 @@ int AnnotationReader::readCNF(VarManager &mngr)
         }
     }
 
-    //TODO assert next line is p cnf x y
     if (*stream == 'p')
     {
         skipLine(stream);
@@ -180,30 +179,9 @@ int TraceReader::readTrace(VarManager &mngr)
     return 0;
 }
 
-void TraceReader::writeTrace(VarManager &mngr, FILE *file)
+void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
 {
-    /* expansion */
-    // for (uint32_t i = 1; i < trace_clauses.size(); i++)
-    // {
-    //     const std::array<uint32_t, 2> &ante = antecedents[i];
-
-    //     if (ante[0] == 0)
-    //     {
-    //         fprintf(file, "%d ", i);
-
-    //         const std::vector<Lit> &clause = trace_clauses[i];
-    //         for (const Lit l : clause)
-    //         {
-    //             fprintf(file, "%d ", mngr.getLitFerp(l));
-    //         }
-    //         fprintf(file, "0 ");
-
-    //         fprintf(file, "%d 0", mngr.getClauseOrigin(trace_id_to_cnf_id[i]));
-    //         fprintf(file, " is lit clause %d 0\n", isLiteralClause(clause, mngr));
-    //     }
-    // }
     /* resolution proof */
-
     fprintf(file, "%s", "r\n");
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
     {
@@ -224,6 +202,30 @@ void TraceReader::writeTrace(VarManager &mngr, FILE *file)
             
             fprintf(file, "%d ", ante[0]);
             fprintf(file, "%d 0\n", ante[1]);        
+        }
+    }
+}
+
+void TraceReader::writeTrace(VarManager &mngr, FILE *file)
+{
+    for (uint32_t i = 1; i < trace_clauses.size(); i++)
+    {
+        fprintf(file, "%d ", i);
+        const std::vector<Lit> &clause = trace_clauses[i];
+        for (const Lit l : clause) {
+            fprintf(file, "%d ", mngr.getLitFerp(l));
+        }
+        fprintf(file, "0 ");
+        const std::array<uint32_t, 2> &ante = antecedents[i];
+        if (ante[0] == 0)
+        {
+            fprintf(file, "%d 0\n", mngr.getClauseOrigin(trace_id_to_cnf_id[i]));
+        }
+        else
+        {
+            assert(ante[0] != 0 && ante[1] != 0);
+            fprintf(file, "%d ", cnf_id_to_trace_id[ante[0]]);
+            fprintf(file, "%d 0\n", cnf_id_to_trace_id[ante[1]]);
         }
     }
 }
