@@ -62,8 +62,8 @@ int main(int argc, const char *argv[])
     }
 
     vmngr.computeNames();
-    vmngr.writeIsSat(ferp_file);
     if (vmngr.is_sat) {
+        vmngr.writeIsSat(ferp_file);
         if (vmngr.has_empty_clause) {
             vmngr.writeEmptyClause(ferp_file);
             assert(trace_reader.trace_clauses.size() == 1);
