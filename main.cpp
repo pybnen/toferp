@@ -1,7 +1,19 @@
 #include <zlib.h>
 #include <assert.h>
+#include <sys/resource.h>
 
 #include "Reader.h"
+
+// taken from qrpcheck
+static inline double read_cpu_time()
+{
+  struct rusage u;
+  if (getrusage (RUSAGE_SELF, &u))
+    return 0;
+  return u.ru_utime.tv_sec + 1e-6 * u.ru_utime.tv_usec +
+         u.ru_stime.tv_sec + 1e-6 * u.ru_stime.tv_usec;
+}
+
 
 int main(int argc, const char *argv[])
 {
@@ -10,6 +22,8 @@ int main(int argc, const char *argv[])
         printf("usage: %s <CNF> <TRACE> <FERP>\n", argv[0]);
         return -1;
     }
+
+    double start_time = read_cpu_time();
 
     const char *cnf_name = argv[1];
     const char *trace_name = argv[2];
@@ -79,5 +93,8 @@ int main(int argc, const char *argv[])
     }
 
     fclose(ferp_file);
+
+    double cpu_time = read_cpu_time() - start_time;
+    printf("ToFerp was running for %.6f s\n", cpu_time);
     return 0;
 }
