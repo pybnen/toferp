@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(toferp)
 
 set(CMAKE_CXX_STANDARD 11)
-add_compile_options(-Wall -Wextra -g)
+add_compile_options(-Wall -Wextra -g -O3)
 
 set(SOURCE_FILES
         main.cpp
