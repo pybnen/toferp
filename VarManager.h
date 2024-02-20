@@ -8,7 +8,6 @@
 #include <vector>
 #include <map>
 #include <set>
-
 #include "common.h"
 
 class VarManager
@@ -19,15 +18,14 @@ private:
     std::map<Var, std::vector<Lit> *> prop_to_annotation;
     std::vector<std::vector<Lit> *> annotations;
     std::vector<bool> occurring_prop;
-    std::vector<uint32_t> clause_origin;
-
-
 public:
     inline VarManager();
     ~VarManager();
 
     bool is_sat;
     bool has_empty_clause;
+    std::vector<uint32_t> clause_origin;
+    std::map<uint32_t, std::vector<uint32_t> * > literal_clause_to_origins;
     std::vector<std::vector<Lit>> clauses;
     int addVariables(const std::vector<Var> &prop, const std::vector<Var> &orig, const std::vector<Lit> &anno);
     void computeNames();

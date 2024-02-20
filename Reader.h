@@ -5,6 +5,7 @@
 #ifndef NANOQBF_READER_H
 #define NANOQBF_READER_H
 
+#include <stdint.h>
 #include "parseutils.h"
 #include "common.h"
 #include "VarManager.h"

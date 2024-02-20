@@ -3,9 +3,9 @@
 //
 
 #include "Reader.h"
-
 #include <assert.h>
 #include <algorithm>
+#include <map>
 
 int Reader::parseUnsigned(unsigned &ret)
 {
@@ -134,9 +134,12 @@ int AnnotationReader::readCNF(VarManager &mngr)
         }
     }
 
+    std::reverse(mngr.clause_origin.begin(), mngr.clause_origin.end());
+    mngr.clause_origin.pop_back();
+
     if (*stream == 'p')
     {
-        skipLine(stream);
+        skipLine(stream);        
         while (*stream != EOF) {
             Lit literal;
             std::vector<Lit> clause = std::vector<Lit>();
@@ -151,6 +154,17 @@ int AnnotationReader::readCNF(VarManager &mngr)
                 mngr.has_empty_clause = true;
             }
             mngr.clauses.push_back(clause);
+
+            if (!mngr.isLiteralClause(clause)) {
+                std::vector<uint32_t> *o = new std::vector<uint32_t>();
+                for (uint32_t j = 0; j < clause.size(); j++)
+                {
+                    o->push_back(mngr.clause_origin.back());
+                    mngr.clause_origin.pop_back();
+                }
+                mngr.literal_clause_to_origins.insert(
+                    std::pair<uint32_t, std::vector<uint32_t>*>((uint32_t)mngr.clauses.size(), o));
+            }
         }
     }
 
@@ -179,29 +193,73 @@ int TraceReader::readTrace(VarManager &mngr)
     return 0;
 }
 
+// void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
+// {
+//     /* resolution proof */
+//     fprintf(file, "%s", "r\n");
+//     for (uint32_t i = 1; i < trace_clauses.size(); i++)
+//     {
+//         const std::array<uint32_t, 2> &ante = antecedents[i];
+
+//         if (ante[0] != 0)
+//         {
+//             assert(ante[0] != 0 && ante[1] != 0);
+        
+//             fprintf(file, "%d ", trace_id_to_cnf_id[i]);
+
+//             const std::vector<Lit> &clause = trace_clauses[i];
+//             for (const Lit l : clause)
+//             {
+//                 fprintf(file, "%d ", mngr.getLitFerp(l));
+//             }
+//             fprintf(file, "0 ");
+            
+//             fprintf(file, "%d ", ante[0]);
+//             fprintf(file, "%d 0\n", ante[1]);        
+//         }
+//     }
+// }
+
 void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
 {
-    /* resolution proof */
-    fprintf(file, "%s", "r\n");
+    bool resolution_proof = false;
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
-    {
+    {        
         const std::array<uint32_t, 2> &ante = antecedents[i];
-
-        if (ante[0] != 0)
+        if (ante[0] == 0)
         {
-            assert(ante[0] != 0 && ante[1] != 0);
-        
-            fprintf(file, "%d ", trace_id_to_cnf_id[i]);
-
-            const std::vector<Lit> &clause = trace_clauses[i];
-            for (const Lit l : clause)
-            {
+            fprintf(file, "%d ", i);
+            const std::vector<Lit> &clause = mngr.clauses[trace_id_to_cnf_id[i] - 1];
+            // const std::vector<Lit> &clause = trace_clauses[i];
+            for (const Lit l : clause) {
                 fprintf(file, "%d ", mngr.getLitFerp(l));
             }
             fprintf(file, "0 ");
-            
-            fprintf(file, "%d ", ante[0]);
-            fprintf(file, "%d 0\n", ante[1]);        
+
+            if (mngr.literal_clause_to_origins.find(trace_id_to_cnf_id[i]) != mngr.literal_clause_to_origins.end()) {
+                auto orig = mngr.literal_clause_to_origins.at(trace_id_to_cnf_id[i]);
+                for (auto o : *orig) {
+                    fprintf(file, "%d ", o);
+                }
+            }
+            fprintf(file, "%s", "0\n");
+        }
+        else
+        {     
+            if (!resolution_proof) {
+                fprintf(file, "%s", "r\n");
+                resolution_proof = true;
+            }
+            assert(ante[0] != 0 && ante[1] != 0);
+
+            fprintf(file, "%d ", i);
+            const std::vector<Lit> &clause = trace_clauses[i];
+            for (const Lit l : clause) {
+                fprintf(file, "%d ", mngr.getLitFerp(l));
+            }
+            fprintf(file, "0 ");
+            fprintf(file, "%d ", cnf_id_to_trace_id[ante[0]]);
+            fprintf(file, "%d 0\n", cnf_id_to_trace_id[ante[1]]);
         }
     }
 }

@@ -84,8 +84,9 @@ int main(int argc, const char *argv[])
             trace_reader.writeTrace(vmngr, ferp_file);
         } else {
             vmngr.writeExpansions(ferp_file);
-            vmngr.writeCNF(ferp_file);
+            //vmngr.writeCNF(ferp_file);
             trace_reader.writeTraceSAT(vmngr, ferp_file);
+            // trace_reader.writeTrace(vmngr, ferp_file);
         }
     } else {
         vmngr.writeExpansions(ferp_file);

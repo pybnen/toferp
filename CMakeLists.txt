@@ -3,6 +3,7 @@ project(toferp)
 
 set(CMAKE_CXX_STANDARD 11)
 add_compile_options(-Wall -Wextra -g -O3)
+# add_compile_options(-Wall -Wextra -g)
 
 set(SOURCE_FILES
         main.cpp
