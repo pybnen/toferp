@@ -222,13 +222,13 @@ int TraceReader::readTrace(VarManager &mngr)
 
 void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
 {
-    bool resolution_proof = false;
+    uint32_t idx = 1;
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
     {        
         const std::array<uint32_t, 2> &ante = antecedents[i];
         if (ante[0] == 0)
         {
-            fprintf(file, "%d ", i);
+            fprintf(file, "%d ", idx);
             const std::vector<Lit> &clause = mngr.clauses[trace_id_to_cnf_id[i] - 1];
             // const std::vector<Lit> &clause = trace_clauses[i];
             for (const Lit l : clause) {
@@ -243,16 +243,17 @@ void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
                 }
             }
             fprintf(file, "%s", "0\n");
+            idx += 1;
         }
-        else
+    }
+    fprintf(file, "%s", "r\n");
+    for (uint32_t i = 1; i < trace_clauses.size(); i++)
+    {
+        if (ante[0] != 0)
         {     
-            if (!resolution_proof) {
-                fprintf(file, "%s", "r\n");
-                resolution_proof = true;
-            }
             assert(ante[0] != 0 && ante[1] != 0);
 
-            fprintf(file, "%d ", i);
+            fprintf(file, "%d ", idx);
             const std::vector<Lit> &clause = trace_clauses[i];
             for (const Lit l : clause) {
                 fprintf(file, "%d ", mngr.getLitFerp(l));
@@ -260,6 +261,8 @@ void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
             fprintf(file, "0 ");
             fprintf(file, "%d ", cnf_id_to_trace_id[ante[0]]);
             fprintf(file, "%d 0\n", cnf_id_to_trace_id[ante[1]]);
+
+            idx +=1;
         }
     }
 }
