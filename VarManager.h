@@ -23,10 +23,13 @@ public:
     ~VarManager();
 
     bool is_sat;
-    bool has_empty_clause;
+    bool has_empty_clause;    
     std::vector<uint32_t> clause_origin;
     std::map<uint32_t, std::vector<uint32_t> * > literal_clause_to_origins;
-    std::vector<std::vector<Lit>> clauses;
+    std::vector<std::vector<Lit>> clauses;    
+    std::vector<bool> is_included;
+    std::map<Var, std::vector<uint32_t> *> helper_to_pgs;
+    std::map<Var, uint32_t> helper_to_nor;
     int addVariables(const std::vector<Var> &prop, const std::vector<Var> &orig, const std::vector<Lit> &anno);
     void computeNames();
     void writeIsSat(FILE *file);

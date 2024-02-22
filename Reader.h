@@ -48,7 +48,7 @@ private:
 	std::vector<uint32_t> trace_id_to_cnf_id;		  ///< Clause ids as they appear in the trace
 	std::map<uint32_t, uint32_t> cnf_id_to_trace_id;  ///< Lookup table in other direction
 	std::vector<std::array<uint32_t, 2>> antecedents; ///< Stores anteceedents of each trace clause
-
+	int new_var_cnt;
 	int readClause();
 
 public:
@@ -58,6 +58,7 @@ public:
 	int readTrace(VarManager &mngr);
 	void writeTrace(VarManager &mngr, FILE *file);
 	void writeTraceSAT(VarManager &mngr, FILE *file);
+	void writePropClause(VarManager &mngr, FILE *file, int trace_idx, int prop_idx, bool checkPG);
 
 	TraceReader(gzFile &file) : Reader(file){};
 };

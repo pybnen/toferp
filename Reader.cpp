@@ -164,6 +164,27 @@ int AnnotationReader::readCNF(VarManager &mngr)
                 }
                 mngr.literal_clause_to_origins.insert(
                     std::pair<uint32_t, std::vector<uint32_t>*>((uint32_t)mngr.clauses.size(), o));
+
+
+                for (Lit l : clause) {
+                    if (mngr.isHelpVariable(var(l))) {
+                        mngr.helper_to_nor.insert(std::pair<Var, uint32_t>(var(l), mngr.clauses.size() - 1));
+                    }
+                }
+            } else {                
+                for (Lit l : clause) {
+                    if (mngr.isHelpVariable(var(l))) {
+                        Var helper_var = var(l);
+                        if (mngr.helper_to_pgs.find(helper_var) != mngr.helper_to_pgs.end()) {
+                            mngr.helper_to_pgs.at(helper_var)->push_back(mngr.clauses.size() -1);
+                        } else {
+                            std::vector<u_int32_t>* tmp = new std::vector<u_int32_t>();
+                            tmp->push_back(mngr.clauses.size() - 1);
+                            mngr.helper_to_pgs.insert(std::pair<Var, std::vector<uint32_t>*>(helper_var, tmp));                        
+                        }
+                        break;
+                    }                    
+                }                
             }
         }
     }
@@ -193,67 +214,94 @@ int TraceReader::readTrace(VarManager &mngr)
     return 0;
 }
 
-// void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
-// {
-//     /* resolution proof */
-//     fprintf(file, "%s", "r\n");
-//     for (uint32_t i = 1; i < trace_clauses.size(); i++)
-//     {
-//         const std::array<uint32_t, 2> &ante = antecedents[i];
+void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, int prop_idx, bool checkPG)
+{
+    if (mngr.is_included[prop_idx]) {
+        /* clause was already written */
+        return;
+    }
+    mngr.is_included[prop_idx] = true;    
 
-//         if (ante[0] != 0)
-//         {
-//             assert(ante[0] != 0 && ante[1] != 0);
-        
-//             fprintf(file, "%d ", trace_id_to_cnf_id[i]);
+    /* print index of clause*/
+    fprintf(file, "%d ", trace_idx);
 
-//             const std::vector<Lit> &clause = trace_clauses[i];
-//             for (const Lit l : clause)
-//             {
-//                 fprintf(file, "%d ", mngr.getLitFerp(l));
-//             }
-//             fprintf(file, "0 ");
-            
-//             fprintf(file, "%d ", ante[0]);
-//             fprintf(file, "%d 0\n", ante[1]);        
-//         }
-//     }
-// }
+    /* get propositional clause */
+    const std::vector<Lit> prop_clause = mngr.clauses[prop_idx];
+    for (const Lit l : prop_clause) {
+        fprintf(file, "%d ", mngr.getLitFerp(l));
+    }
+    fprintf(file, "0 ");
+
+    bool isNorClause = !mngr.isLiteralClause(prop_clause);
+    if (isNorClause) {
+        if (mngr.literal_clause_to_origins.find(prop_idx + 1) != mngr.literal_clause_to_origins.end()) {
+            auto orig = mngr.literal_clause_to_origins.at(prop_idx + 1);
+            for (auto o : *orig) {
+                fprintf(file, "%d ", o);
+            }
+        }
+    }
+    fprintf(file, "%s", "0\n");
+
+    if (isNorClause) {
+        for (auto l : prop_clause) {
+            if (mngr.isHelpVariable(var(l))) {
+                assert(sign(l) == 1);
+                Var helper_var = var(l);
+
+                for (auto pg_idx : *mngr.helper_to_pgs.at(helper_var)) {
+                    int idx;
+                    if (cnf_id_to_trace_id.find(pg_idx + 1) != cnf_id_to_trace_id.end()) {
+                        idx = pg_idx + 1;
+                    } else {
+                        idx = ((int)  trace_id_to_cnf_id.size()) + new_var_cnt;
+                        new_var_cnt++;                        
+                    }
+                    writePropClause(mngr, file, idx, pg_idx, false);
+                }                
+            }
+        }
+    } else if (checkPG) {
+         for (auto l : prop_clause) {
+            if (mngr.isHelpVariable(var(l))) {
+                assert(sign(l) == 0);
+                Var helper_var = var(l);
+                auto nor_idx = mngr.helper_to_nor.at(helper_var);
+                int idx;                
+                if (cnf_id_to_trace_id.find(nor_idx + 1) != cnf_id_to_trace_id.end()) {
+                    idx = cnf_id_to_trace_id.at(nor_idx + 1);                                
+                } else {
+                    idx = ((int)  trace_id_to_cnf_id.size()) + new_var_cnt;
+                    new_var_cnt ++;
+                }
+                writePropClause(mngr, file, idx, nor_idx, true);                        
+            }
+        }
+    }
+}
 
 void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
 {
-    uint32_t idx = 1;
+    mngr.is_included.resize(mngr.clauses.size(), false);
+    new_var_cnt = 0;
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
     {        
         const std::array<uint32_t, 2> &ante = antecedents[i];
         if (ante[0] == 0)
         {
-            fprintf(file, "%d ", idx);
-            const std::vector<Lit> &clause = mngr.clauses[trace_id_to_cnf_id[i] - 1];
-            // const std::vector<Lit> &clause = trace_clauses[i];
-            for (const Lit l : clause) {
-                fprintf(file, "%d ", mngr.getLitFerp(l));
-            }
-            fprintf(file, "0 ");
-
-            if (mngr.literal_clause_to_origins.find(trace_id_to_cnf_id[i]) != mngr.literal_clause_to_origins.end()) {
-                auto orig = mngr.literal_clause_to_origins.at(trace_id_to_cnf_id[i]);
-                for (auto o : *orig) {
-                    fprintf(file, "%d ", o);
-                }
-            }
-            fprintf(file, "%s", "0\n");
-            idx += 1;
+            writePropClause(mngr, file, i, trace_id_to_cnf_id[i] - 1, true);            
         }
     }
+    
     fprintf(file, "%s", "r\n");
     for (uint32_t i = 1; i < trace_clauses.size(); i++)
     {
+        const std::array<uint32_t, 2> &ante = antecedents[i];
         if (ante[0] != 0)
         {     
             assert(ante[0] != 0 && ante[1] != 0);
 
-            fprintf(file, "%d ", idx);
+            fprintf(file, "%d ", i);
             const std::vector<Lit> &clause = trace_clauses[i];
             for (const Lit l : clause) {
                 fprintf(file, "%d ", mngr.getLitFerp(l));
@@ -261,8 +309,6 @@ void TraceReader::writeTraceSAT(VarManager &mngr, FILE *file)
             fprintf(file, "0 ");
             fprintf(file, "%d ", cnf_id_to_trace_id[ante[0]]);
             fprintf(file, "%d 0\n", cnf_id_to_trace_id[ante[1]]);
-
-            idx +=1;
         }
     }
 }
