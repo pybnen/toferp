@@ -227,21 +227,52 @@ void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, i
 
     /* get propositional clause */
     const std::vector<Lit> prop_clause = mngr.clauses[prop_idx];
-    for (const Lit l : prop_clause) {
-        fprintf(file, "%d ", mngr.getLitFerp(l));
+
+    /* print literals */
+    int cnt = 1;
+    std::vector<int> cnts;
+    Lit last_literal;
+    for (int i = 0; i < prop_clause.size(); i++) {
+        const Lit l = prop_clause[i];
+        if (i == 0 || last_literal != l) {
+            fprintf(file, "%d ", mngr.getLitFerp(l));
+            last_literal = l;
+
+            if (i != 0) {
+                cnts.push_back(cnt);
+            }            
+            cnt = 1;
+        } else {
+            cnt += 1;
+        }
     }
+    cnts.push_back(cnt);
+    // for (const Lit l : prop_clause) {
+    //     if (last_literal != l) {
+    //         fprintf(file, "%d ", mngr.getLitFerp(l));
+    //         last_literal = l;
+    //     }        
+    // }
     fprintf(file, "0 ");
 
     bool isNorClause = !mngr.isLiteralClause(prop_clause);
     if (isNorClause) {
         if (mngr.literal_clause_to_origins.find(prop_idx + 1) != mngr.literal_clause_to_origins.end()) {
-            auto orig = mngr.literal_clause_to_origins.at(prop_idx + 1);
-            for (auto o : *orig) {
-                fprintf(file, "%d ", o);
+            auto orig = *mngr.literal_clause_to_origins.at(prop_idx + 1);
+            std::reverse(orig.begin(), orig.end());
+            for (auto cnt : cnts) {
+                for(int i = 0; i < cnt; i++) {
+                    fprintf(file, "%d ", orig.back());
+                    orig.pop_back();
+                }
+                fprintf(file, "%s", "0 ");
             }
+            fprintf(file, "%s", "0\n");
         }
+    } else {
+        fprintf(file, "%s", "0\n");
     }
-    fprintf(file, "%s", "0\n");
+    
 
     if (isNorClause) {
         for (auto l : prop_clause) {
@@ -252,7 +283,7 @@ void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, i
                 for (auto pg_idx : *mngr.helper_to_pgs.at(helper_var)) {
                     int idx;
                     if (cnf_id_to_trace_id.find(pg_idx + 1) != cnf_id_to_trace_id.end()) {
-                        idx = pg_idx + 1;
+                        idx = cnf_id_to_trace_id.at(pg_idx + 1);      
                     } else {
                         idx = ((int)  trace_id_to_cnf_id.size()) + new_var_cnt;
                         new_var_cnt++;                        
