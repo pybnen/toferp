@@ -11,6 +11,16 @@ VarManager::~VarManager()
 {
 	for (std::vector<Lit> *a : annotations)
 		delete a;
+
+	for (auto& pair : literal_clause_to_origins) {
+		delete pair.second;
+	}
+	literal_clause_to_origins.clear();
+
+	for (auto& pair : helper_to_pgs) {
+		delete pair.second;
+	}
+	helper_to_pgs.clear();
 }
 
 int VarManager::addVariables(const std::vector<Var> &prop, const std::vector<Var> &orig, const std::vector<Lit> &anno)
