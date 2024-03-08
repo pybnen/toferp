@@ -231,8 +231,8 @@ void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, i
     /* print literals */
     int cnt = 1;
     std::vector<int> cnts;
-    Lit last_literal;
-    for (int i = 0; i < prop_clause.size(); i++) {
+    Lit last_literal = 0;
+    for (auto i = 0u; i < prop_clause.size(); i++) {
         const Lit l = prop_clause[i];
         if (i == 0 || last_literal != l) {
             fprintf(file, "%d ", mngr.getLitFerp(l));
@@ -247,12 +247,6 @@ void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, i
         }
     }
     cnts.push_back(cnt);
-    // for (const Lit l : prop_clause) {
-    //     if (last_literal != l) {
-    //         fprintf(file, "%d ", mngr.getLitFerp(l));
-    //         last_literal = l;
-    //     }        
-    // }
     fprintf(file, "0 ");
 
     bool isNorClause = !mngr.isLiteralClause(prop_clause);
