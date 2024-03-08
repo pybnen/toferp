@@ -106,20 +106,38 @@ void VarManager::writeCNF(FILE *file)
 	for (uint32_t i = 0; i < clauses.size(); i++)
 	{
 		fprintf(file, "%d ", i + 1);
-		for (const auto literal : clauses[i])
-		{
-			fprintf(file, "%d ", getLitFerp(literal));
-		}
 
+		/* print literals */
+		int cnt = 1;
+		std::vector<int> cnts;
+		Lit last_literal;
+		auto prop_clause = clauses[i];
+		for (int k = 0; k < prop_clause.size(); k++) {
+			const Lit l = prop_clause[k];
+			if (k == 0 || last_literal != l) {
+				fprintf(file, "%d ", getLitFerp(l));
+				last_literal = l;
+
+				if (k != 0) {
+					cnts.push_back(cnt);
+				}            
+				cnt = 1;
+			} else {
+				cnt += 1;
+			}
+		}
+		cnts.push_back(cnt);
 		fprintf(file, "0 ");
 
 		if (!isLiteralClause(clauses[i]))
 		{
-			for (uint32_t j = 0; j < clauses[i].size(); j++)
-			{
-				fprintf(file, "%d ", clause_origin.back());
-				clause_origin.pop_back();
-			}
+			for (auto cnt : cnts) {
+                for(int i = 0; i < cnt; i++) {
+                    fprintf(file, "%d ", clause_origin.back());
+                    clause_origin.pop_back();
+                }
+                fprintf(file, "%s", "0 ");
+            }
 		}
 		fprintf(file, "0\n");
 	}
