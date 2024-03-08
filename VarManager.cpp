@@ -110,9 +110,9 @@ void VarManager::writeCNF(FILE *file)
 		/* print literals */
 		int cnt = 1;
 		std::vector<int> cnts;
-		Lit last_literal;
+		Lit last_literal = 0;
 		auto prop_clause = clauses[i];
-		for (int k = 0; k < prop_clause.size(); k++) {
+		for (auto k = 0u; k < prop_clause.size(); k++) {
 			const Lit l = prop_clause[k];
 			if (k == 0 || last_literal != l) {
 				fprintf(file, "%d ", getLitFerp(l));
