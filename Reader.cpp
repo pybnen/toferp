@@ -252,7 +252,7 @@ void TraceReader::writePropClause(VarManager &mngr, FILE *file, int trace_idx, i
                 for (auto pg_idx : *mngr.helper_to_pgs.at(helper_var)) {
                     int idx;
                     if (cnf_id_to_trace_id.find(pg_idx + 1) != cnf_id_to_trace_id.end()) {
-                        idx = pg_idx + 1;
+                        idx = cnf_id_to_trace_id.at(pg_idx + 1);
                     } else {
                         idx = ((int)  trace_id_to_cnf_id.size()) + new_var_cnt;
                         new_var_cnt++;                        
