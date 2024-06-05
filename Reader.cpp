@@ -134,6 +134,10 @@ int AnnotationReader::readCNF(VarManager &mngr)
         }
     }
 
+    if (!mngr.is_sat) {
+        return 0;
+    }
+
     std::reverse(mngr.clause_origin.begin(), mngr.clause_origin.end());
     mngr.clause_origin.pop_back();
 
