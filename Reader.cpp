@@ -134,6 +134,10 @@ int AnnotationReader::readCNF(VarManager &mngr)
         }
     }
 
+    if (!mngr.is_sat) {
+        return 0;
+    }
+
     if (*stream == 'p')
     {
         skipLine(stream);
